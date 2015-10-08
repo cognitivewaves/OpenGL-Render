@@ -11,13 +11,29 @@ static int width = 0;
 static int height = 0;
 static float thetax=0, thetay=0, thetaz=0;
 
-GLUquadric* pOrigin;
-GLUquadric* pAxisX;
-GLUquadric* pArrowX;
-GLUquadric* pAxisY;
-GLUquadric* pArrowY;
-GLUquadric* pAxisZ;
-GLUquadric* pArrowZ;
+float a[] = { 0.0, 0.0, 0.0,    // origin
+              2.0, 0.0, 0.0,    // x-axis
+              0.0, 2.0, 0.0,    // y-axis
+              0.0, 0.0, 2.0 };  // z-axis
+
+
+//  (3,4,5)          (6,7,8)
+//     1----------------2
+//     | \            / |
+//     |   \        /   |
+//     |     \    /     |
+//     |        4       | (12,13,14)
+//     |     /    \     |
+//     |   /        \   |
+//     | /            \ |
+//     0 ---------------3
+//  (0,1,2)          (9,10,11)
+
+float v[] = { 1.0, 1.0, 1.0,    // 0
+              1.0, 2.0, 1.0,    // 1
+              2.0, 2.0, 1.0,    // 2
+              2.0, 1.0, 1.0,    // 3
+              1.5, 1.5, 2.0 };  // 4
 
 bool double_equal(double a, double b)
 {
@@ -126,79 +142,60 @@ static void display(void)
     glRotatef(thetay, 0, 1, 0);
     glRotatef(thetaz, 0, 0, 1);
 
-    // x-axis
+    // x-axis in red
     glColor3d(1, 0, 0);
     glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(2, 0, 0);
+    glVertex3f(a[0], a[1], a[2]);
+    glVertex3f(a[3], a[4], a[5]);
     glEnd();
 
+    // y-axis in green
     glColor3d(0, 1, 0);
     glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0, 2, 0);
+    glVertex3f(a[0], a[1], a[2]);
+    glVertex3f(a[6], a[7], a[8]);
     glEnd();
 
+    // z-axis in blue
     glColor3d(0, 0, 1);
     glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0, 0, 2);
+    glVertex3f(a[0], a[1], a[2]);
+    glVertex3f(a[9], a[10], a[11]);
     glEnd();
 
-//  (3,4,5)          (6,7,8)
-//     1----------------2
-//     | \            / |
-//     |   \        /   |
-//     |     \    /     |
-//     |        4       | (12,13,14)
-//     |     /    \     |
-//     |   /        \   |
-//     | /            \ |
-//     0 ---------------3
-//  (0,1,2)          (9,10,11)
-
-    float v[] = { 1.0, 1.0, 1.0,    // 0
-                  1.0, 2.0, 1.0,    // 1
-                  2.0, 2.0, 1.0,    // 2
-                  2.0, 1.0, 1.0,    // 3
-                  1.5, 1.5, 2.0 };  // 4
-
-    glColor3d(1, 1, 1);
-
     glBegin(GL_QUADS);
-    glVertex3f(v[0], v[1], v[2]);   // 0
-    glVertex3f(v[3], v[4], v[5]);   // 1
-    glVertex3f(v[6], v[7], v[8]);   // 2
-    glVertex3f(v[9], v[10], v[11]); // 3
-    setNormal(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
+        glColor3d(1, 1, 1);
+        glVertex3f(v[0], v[1], v[2]);   // 0
+        glVertex3f(v[3], v[4], v[5]);   // 1
+        glVertex3f(v[6], v[7], v[8]);   // 2
+        glVertex3f(v[9], v[10], v[11]); // 3
+        setNormal(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
     glEnd();
 
     glBegin(GL_TRIANGLES);
+        glColor3f(.5, .5, 0);
+        glVertex3f(v[0], v[1], v[2]);       // 0
+        glVertex3f(v[9], v[10], v[11]);     // 3
+        glVertex3f(v[12], v[13], v[14]);    // 4
+        setNormal(v[0], v[1], v[2], v[9], v[10], v[11],  v[12], v[13], v[14]);
 
-    glColor3f(.5, .5, 0);
-    glVertex3f(v[0], v[1], v[2]);       // 0
-    glVertex3f(v[9], v[10], v[11]);     // 3
-    glVertex3f(v[12], v[13], v[14]);    // 4
-    setNormal(v[0], v[1], v[2], v[9], v[10], v[11],  v[12], v[13], v[14]);
+        glColor3f(0, .5, .5);
+        glVertex3f(v[9], v[10], v[11]);     // 3
+        glVertex3f(v[6], v[7], v[8]);       // 2
+        glVertex3f(v[12], v[13], v[14]);    // 4
+        setNormal(v[9], v[10], v[11], v[6], v[7], v[8], v[12], v[13], v[14]);
 
-    glColor3f(0, .5, .5);
-    glVertex3f(v[9], v[10], v[11]);     // 3
-    glVertex3f(v[6], v[7], v[8]);       // 2
-    glVertex3f(v[12], v[13], v[14]);    // 4
-    setNormal(v[9], v[10], v[11], v[6], v[7], v[8], v[12], v[13], v[14]);
+        glColor3f(.5, 0, .5);
+        glVertex3f(v[6], v[7], v[8]);       // 2
+        glVertex3f(v[3], v[4], v[5]);       // 1
+        glVertex3f(v[12], v[13], v[14]);    // 4
+        setNormal(v[6], v[7], v[8], v[3], v[4], v[5], v[12], v[13], v[14]);
 
-    glColor3f(.5, 0, .5);
-    glVertex3f(v[6], v[7], v[8]);
-    glVertex3f(v[3], v[4], v[5]);
-    glVertex3f(v[12], v[13], v[14]);
-    setNormal(v[6], v[7], v[8], v[3], v[4], v[5], v[12], v[13], v[14]);
-
-    glColor3f(.5, .5, .5);
-    glVertex3f(v[3], v[4], v[5]);
-    glVertex3f(v[0], v[1], v[2]);
-    glVertex3f(v[12], v[13], v[14]);
-    setNormal(v[3], v[4], v[5], v[0], v[1], v[2], v[12], v[13], v[14]);
-
+        glColor3f(.5, .5, .5);
+        glVertex3f(v[3], v[4], v[5]);       // 1
+        glVertex3f(v[0], v[1], v[2]);       // 0
+        glVertex3f(v[12], v[13], v[14]);    // 4
+        setNormal(v[3], v[4], v[5], v[0], v[1], v[2], v[12], v[13], v[14]);
     glEnd();
 
     glutSwapBuffers();
