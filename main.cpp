@@ -3,13 +3,20 @@
 #include <stdio.h>
 #include <math.h>   // fabs
 
+bool double_equal(double a, double b)
+{
+    if (fabs(a-b) < 1e-3)
+        return true;
+    return false;
+}
+
 static double zoom = .01;
 static int width = 0;
 static int height = 0;
 static float thetax=0, thetay=0, thetaz=0;
 
-//      Y             Z
-//      |           /
+//      Y
+//      |           Z
 //      |         /
 //      |       /
 //      |     /
@@ -70,6 +77,11 @@ void expandAxesColors()
 //     0 ---------------3
 //  (0,1,2)          (9,10,11)
 
+const int nFaces = 6;
+const int nVerticesPerFace = 3;
+const int nVertexComponents = 3;
+const int nColorComponents = 3;
+
 float v[] = { 1.0, 1.0, 1.0,    // 0
               1.0, 2.0, 1.0,    // 1
               2.0, 2.0, 1.0,    // 2
@@ -83,14 +95,18 @@ GLubyte pvi[] = {0, 1, 2,
                  2, 1, 4,
                  1, 0, 4};
 
-float pve[18*3];
+float pve[nFaces*nVerticesPerFace*nVertexComponents];
 void expandVertices()
 {
-    for (int i=0; i<18; i++)
+    for (int i=0; i<nFaces; i++)
     {
-        pve[i*3+0] = v[pvi[i]*3+0];
-        pve[i*3+1] = v[pvi[i]*3+1];
-        pve[i*3+2] = v[pvi[i]*3+2];
+        for (int j=0; j<nVerticesPerFace; j++)
+        {
+            for (int k=0; k<nVertexComponents; k++)
+            {
+                pve[(i*3+j)*3+k] = v[pvi[i*3+j]*3+k];
+            }
+        }
     }
 }
 
@@ -107,25 +123,22 @@ GLubyte pci[] = { 0, 0, 0,
                   3, 3, 3,
                   4, 4, 4 };
 
-float pce[18*3];
+float pce[nFaces*nVerticesPerFace*nColorComponents];
 void expandColors()
 {
-    for (int i=0; i<18; i++)
+    for (int i=0; i<nFaces; i++)
     {
-        pce[i*3+0] = c[pci[i]*3+0];
-        pce[i*3+1] = c[pci[i]*3+1];
-        pce[i*3+2] = c[pci[i]*3+2];
+        for (int j=0; j<nVerticesPerFace; j++)
+        {
+            for (int k=0; k<nColorComponents; k++)
+            {
+                pce[(i*3+j)*3+k] = c[pci[i*3+j]*3+k];
+            }
+        }
     }
 }
 
-float n[6*3*3];
-
-bool double_equal(double a, double b)
-{
-    if (fabs(a-b) < 1e-3)
-        return true;
-    return false;
-}
+float n[nFaces*nVerticesPerFace*nVertexComponents];
 
 static void key(unsigned char key, int x, int y)
 {
@@ -231,8 +244,8 @@ void calculateNormals()
         n[i*3*3+7]=ny;
         n[i*3*3+8]=nz;
     }
-
 }
+
 void setNormal(float v1x, float v1y, float v1z,
                float v2x, float v2y, float v2z, 
                float v3x, float v3y, float v3z)
@@ -257,13 +270,6 @@ void setNormal(float v1x, float v1y, float v1z,
 
 static void drawVertexArray()
 {
-    expandAxesVertices();
-    expandAxesColors();
-
-    expandVertices();
-    expandColors();
-    calculateNormals();
-
     // Draw axes
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
@@ -376,8 +382,8 @@ static void display(void)
     glRotatef(thetay, 0, 1, 0);
     glRotatef(thetaz, 0, 0, 1);
 
-    drawImmediate();
-    //drawVertexArray();
+    //drawImmediate();
+    drawVertexArray();
 
     glutSwapBuffers();
 }
@@ -420,6 +426,12 @@ int main(int argc, char* argv[])
 
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glEnable(GL_COLOR_MATERIAL);
+
+    expandAxesVertices();
+    expandAxesColors();
+    expandVertices();
+    expandColors();
+    calculateNormals();
 
     glutMainLoop();
 
