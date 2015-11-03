@@ -1,19 +1,19 @@
 cmake_minimum_required (VERSION 2.8)
 
-project (OpenGL-Basic)
+project (OpenGL-Render)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/_install)
 
 ###################################
-#     configure freeglut library      #
+#     configure freeglut library  #
 ###################################
 message("Configuring freeglut library...")
 add_subdirectory(freeglut-3.0.0)
 message("Configuring freeglut library - done")
 
 ###################################
-#         configure executable        #
+#         configure executable    #
 ###################################
 find_package(OpenGL REQUIRED)
 if (NOT OPENGL_GLU_FOUND)
