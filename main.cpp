@@ -1,4 +1,5 @@
 #include "GL/freeglut.h"
+#include "glextload.h"
 
 #include <stdio.h>
 #include <math.h>   // fabs
@@ -268,6 +269,57 @@ void setNormal(float v1x, float v1y, float v1z,
     glNormal3f(nx, ny, nz);
 }
 
+
+static void drawVertexBufferObject()
+{
+    LoadGLExtensions();
+
+    GLuint* aVboIds = new GLuint[3];
+    glGenBuffers(3, aVboIds);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    //// Set axes data
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
+    glColorPointer(3, GL_FLOAT, 0, 0);
+    glDrawArrays( GL_LINES, 0, 6 );
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+
+    // Set pyramid data
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
+    glVertexPointer(3, GL_FLOAT, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
+    glColorPointer(3, GL_FLOAT, 0, 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[2]);  // normal
+    glBufferData(GL_ARRAY_BUFFER, sizeof(n), n, GL_STATIC_DRAW);
+    glNormalPointer(GL_FLOAT, 0, 0);
+
+    // Draw pyramid
+    glDrawArrays( GL_TRIANGLES, 0, 18 );
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+}
+
 static void drawVertexArray()
 {
     // Draw axes
@@ -383,7 +435,8 @@ static void display(void)
     glRotatef(thetaz, 0, 0, 1);
 
     //drawImmediate();
-    drawVertexArray();
+    //drawVertexArray();
+    drawVertexBufferObject();
 
     glutSwapBuffers();
 }
