@@ -22,7 +22,7 @@ endif (NOT OPENGL_GLU_FOUND)
 
 include_directories(freeglut-3.0.0/include)
 
-add_executable (app main.cpp)
+add_executable (app main.cpp glext.h glextload.h)
 target_link_libraries (app freeglut ${OPENGL_glu_LIBRARY})
 
 install (TARGETS app RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

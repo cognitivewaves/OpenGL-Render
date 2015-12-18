@@ -269,6 +269,98 @@ void setNormal(float v1x, float v1y, float v1z,
     glNormal3f(nx, ny, nz);
 }
 
+const char* vertex_shader =
+    "attribute vec3 aVertexPos;"
+    "attribute vec3 aColor;"
+    "uniform mat4 umvMat;"
+    "uniform mat4 upMat;"
+    "varying vec3 vColor;"
+    "void main () {"
+        "gl_Position = upMat * umvMat * vec4(aVertexPos, 1.0);"
+        "vColor = aColor;"
+    "}";
+
+const char* fragment_shader =
+    "varying vec3 vColor;"
+    "void main () {"
+        "gl_FragColor = vec4 (vColor, 1.0);"
+    "}";
+
+GLuint program = 0;
+
+static void InitShaders()
+{
+    GLuint vs = glCreateShader (GL_VERTEX_SHADER);
+    glShaderSource (vs, 1, &vertex_shader, NULL);
+    glCompileShader (vs);
+
+    GLuint fs = glCreateShader (GL_FRAGMENT_SHADER);
+    glShaderSource (fs, 1, &fragment_shader, NULL);
+    glCompileShader (fs);
+
+    program = glCreateProgram();
+    glAttachShader (program, fs);
+    glAttachShader (program, vs);
+
+    glBindAttribLocation(program, 2, "aVertexPos");
+    glBindAttribLocation(program, 3, "aColor");
+
+
+    glLinkProgram (program);
+
+    glUseProgram (program);
+}
+
+static void drawShader()
+{
+    LoadGLExtensions();
+    InitShaders();
+
+    GLfloat mvMat[16]; 
+    glGetFloatv(GL_MODELVIEW_MATRIX, mvMat); 
+    GLint mvloc = glGetUniformLocation(program, "umvMat");
+    glUniformMatrix4fv(mvloc, 1, false, mvMat);
+
+    GLfloat pMat[16]; 
+    glGetFloatv(GL_PROJECTION_MATRIX, pMat); 
+    GLint ploc = glGetUniformLocation(program, "upMat");
+    glUniformMatrix4fv(ploc, 1, false, pMat);
+
+    GLint vertexPosLoc = glGetAttribLocation(program, "aVertexPos");
+    GLint colorLoc = glGetAttribLocation(program, "aColor");
+
+    GLuint* aVboIds = new GLuint[3];
+    glGenBuffers(3, aVboIds);
+
+    //glEnableClientState(GL_VERTEX_ARRAY);
+
+    // Set axes data
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
+    glVertexAttribPointer(vertexPosLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
+
+    //glEnableClientState(GL_COLOR_ARRAY);
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
+    glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(3);
+
+    glDrawArrays( GL_LINES, 0, 6 );
+
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
+    glVertexAttribPointer(vertexPosLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
+    glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(3);
+
+    // Draw pyramid
+    glDrawArrays( GL_TRIANGLES, 0, 18 );
+}
 
 static void drawVertexBufferObject()
 {
@@ -436,7 +528,8 @@ static void display(void)
 
     //drawImmediate();
     //drawVertexArray();
-    drawVertexBufferObject();
+    //drawVertexBufferObject();
+    drawShader();
 
     glutSwapBuffers();
 }
