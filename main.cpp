@@ -311,6 +311,75 @@ static void InitShaders()
     glUseProgram (program);
 }
 
+GLuint gvaoid = 0;
+static void defineVAO()
+{
+    GLuint voaIds[3];
+    glGenVertexArrays(3, voaIds);
+
+    GLuint vboIds[4];
+    glGenBuffers(4, vboIds);
+
+    GLint vertexPosLoc = glGetAttribLocation(program, "aVertexPos");
+    GLint colorLoc = glGetAttribLocation(program, "aColor");
+
+    gvaoid = voaIds[0];
+
+    // axes
+    glBindVertexArray(voaIds[0]);   // current VAO
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
+    glVertexAttribPointer(2/*index*/, 3, GL_FLOAT, GL_FALSE, 0/*stride*/, 0/*pointer offset*/);
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);  // color
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
+    glVertexAttribPointer(3/*index*/, 3, GL_FLOAT, GL_FALSE, 0/*stride*/, 0/*pointer offset*/);
+    glEnableVertexAttribArray(3);
+
+    // pyramid
+    glBindVertexArray(voaIds[1]);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // vertex
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[3]);  // color
+    glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(3);
+
+    glBindVertexArray(0); // disable VAO
+}
+
+static void drawShaderWithVertexArrayObject()
+{
+    LoadGLExtensions();
+    InitShaders();
+    defineVAO();
+
+    GLfloat mvMat[16]; 
+    glGetFloatv(GL_MODELVIEW_MATRIX, mvMat); 
+    GLint mvloc = glGetUniformLocation(program, "umvMat");
+    glUniformMatrix4fv(mvloc, 1, false, mvMat);
+
+    GLfloat pMat[16]; 
+    glGetFloatv(GL_PROJECTION_MATRIX, pMat); 
+    GLint ploc = glGetUniformLocation(program, "upMat");
+    glUniformMatrix4fv(ploc, 1, false, pMat);
+
+    GLint vertexPosLoc = glGetAttribLocation(program, "aVertexPos");
+    GLint colorLoc = glGetAttribLocation(program, "aColor");
+
+    glBindVertexArray(1);   // current VAO, enable VAO
+    glDrawArrays( GL_LINES, 0, 6 );
+
+    glBindVertexArray(2);
+    glDrawArrays( GL_TRIANGLES, 0, 18 );
+}
+
 static void drawShader()
 {
     LoadGLExtensions();
@@ -529,7 +598,8 @@ static void display(void)
     //drawImmediate();
     //drawVertexArray();
     //drawVertexBufferObject();
-    drawShader();
+    //drawShader();
+    drawShaderWithVertexArrayObject();
 
     glutSwapBuffers();
 }
