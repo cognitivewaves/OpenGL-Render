@@ -4,17 +4,35 @@
 #include <stdio.h>
 #include <math.h>   // fabs
 
-bool double_equal(double a, double b)
-{
-    if (fabs(a-b) < 1e-3)
-        return true;
-    return false;
-}
 
 static double zoom = .01;
 static int width = 0;
 static int height = 0;
 static float thetax=0, thetay=0, thetaz=0;
+
+enum DrawType
+{
+    kImmediate,
+    kVertexArray,
+    kVBO,
+    kShader,
+    kVAO
+};
+DrawType drawType = kImmediate;
+
+GLuint* vboIds = NULL;
+GLuint* vaoIds = NULL;
+GLuint program = 0;
+GLuint SHADER_VERTEX_LOC_INDEX = 2;
+GLuint SHADER_COLOR_LOC_INDEX = 3;
+
+const int nVertexComponents = 3;
+const int nColorComponents = 3;
+const int nLines = 3;
+const int nVerticesPerLine = 2;
+const int nFaces = 6;
+const int nVerticesPerFace = 3;
+
 
 //      Y
 //      |           Z
@@ -44,7 +62,7 @@ GLubyte aci[] = { 0, 0,
                   1, 1,
                   2, 2 };
 
-float ave[6*3];
+float ave[nLines*nVerticesPerLine*nVertexComponents];
 void expandAxesVertices()
 {
     for (int i=0; i<6; i++)
@@ -55,7 +73,7 @@ void expandAxesVertices()
     }
 }
 
-float ace[6*3];
+float ace[nLines*nVerticesPerLine*nColorComponents];
 void expandAxesColors()
 {
     for (int i=0; i<6; i++)
@@ -77,11 +95,6 @@ void expandAxesColors()
 //     | /            \ |
 //     0 ---------------3
 //  (0,1,2)          (9,10,11)
-
-const int nFaces = 6;
-const int nVerticesPerFace = 3;
-const int nVertexComponents = 3;
-const int nColorComponents = 3;
 
 float v[] = { 1.0, 1.0, 1.0,    // 0
               1.0, 2.0, 1.0,    // 1
@@ -141,13 +154,43 @@ void expandColors()
 
 float n[nFaces*nVerticesPerFace*nVertexComponents];
 
-static void key(unsigned char key, int x, int y)
+// ===========================================================================
+
+bool double_equal(double a, double b)
+{
+    if (fabs(a-b) < 1e-3)
+        return true;
+    return false;
+}
+
+static void displayCommands()
+{
+    printf("1       : Immediate mode\n");
+    printf("2       : Vertex array\n");
+    printf("3       : Vertex Buffer Object (VBO)\n");
+    printf("4       : Shader\n");
+    printf("5       : Shader with Vertex Array Object (VAO)\n");
+    printf("\n");
+    printf("Q/q/ESC : Quit\n");
+    printf("+/=     : Zoom in\n");
+    printf("-/_     : Zoom out\n");
+    printf("SPACE   : Reset view\n");
+    printf("X       : Rotate +ve X axis\n");
+    printf("x       : Rotate -ve X axis\n");
+    printf("Y       : Rotate +ve Y axis\n");
+    printf("X       : Rotate +ve Y axis\n");
+    printf("Z       : Rotate +ve Z axis\n");
+    printf("z       : Rotate -ve z axis\n");
+}
+
+static void onKeyPressed(unsigned char key, int x, int y)
 {
     switch (key)
     {
     case 27 :
     case 'Q':
-    case 'q': glutLeaveMainLoop () ;      break;
+    case 'q': 
+        glutLeaveMainLoop () ; break;
 
     case '=':
     case '+':
@@ -155,14 +198,12 @@ static void key(unsigned char key, int x, int y)
         if (double_equal(zoom, 0))
            zoom = 0.001;
         break;
-
     case '-':
     case '_': 
         zoom = zoom+0.001;
         if (double_equal(zoom, 0))
             zoom = 0.001;
         break;
-
     case ' ':
         zoom = 0.01;
         thetax=0;
@@ -171,26 +212,28 @@ static void key(unsigned char key, int x, int y)
         break;
 
     case 'x':
-        thetax -= 10;
-        break;
+        thetax -= 10; break;
     case 'X':
-        thetax += 10;
-        break;
-
+        thetax += 10; break; 
     case 'y':
-        thetay -= 10;
-        break;
+        thetay -= 10; break;
     case 'Y':
-        thetay += 10;
-        break;
-
+        thetay += 10; break;
     case 'z':
-        thetaz -= 10;
-        break;
+        thetaz -= 10; break;
     case 'Z':
-        thetaz += 10;
-        break;
+        thetaz += 10; break;
 
+    case '1':
+        drawType = kImmediate; break;
+    case '2':
+        drawType = kVertexArray; break;
+    case '3':
+        drawType = kVBO; break;
+    case '4':
+        drawType = kShader; break;
+    case '5':
+        drawType = kVAO; break;
     default:
         break;
     }
@@ -198,7 +241,7 @@ static void key(unsigned char key, int x, int y)
     glutPostRedisplay();
 }
 
-static void resize(int w, int h)
+static void onResize(int w, int h)
 {
     width = w;
     height = h;
@@ -230,9 +273,6 @@ void calculateNormals()
         float ny = uz*vx - ux*vz;
         float nz = ux*vy - uy*vx;
 
-        printf("\n ---------- calcNormal  ");
-        printf("%g, %g, %g\n", nx, ny, nz);
-
         n[i*3*3+0]=nx;
         n[i*3*3+1]=ny;
         n[i*3*3+2]=nz;
@@ -263,20 +303,17 @@ void setNormal(float v1x, float v1y, float v1z,
     float ny = uz*vx - ux*vz;
     float nz = ux*vy - uy*vx;
 
-    printf("\n ------- setNormal ");
-    printf("%g, %g, %g\n", nx, ny, nz);
-
     glNormal3f(nx, ny, nz);
 }
 
 const char* vertex_shader =
-    "attribute vec3 aVertexPos;"
+    "attribute vec3 aVertex;"
     "attribute vec3 aColor;"
     "uniform mat4 umvMat;"
     "uniform mat4 upMat;"
     "varying vec3 vColor;"
     "void main () {"
-        "gl_Position = upMat * umvMat * vec4(aVertexPos, 1.0);"
+        "gl_Position = upMat * umvMat * vec4(aVertex, 1.0);"
         "vColor = aColor;"
     "}";
 
@@ -285,8 +322,6 @@ const char* fragment_shader =
     "void main () {"
         "gl_FragColor = vec4 (vColor, 1.0);"
     "}";
-
-GLuint program = 0;
 
 static void InitShaders()
 {
@@ -302,54 +337,50 @@ static void InitShaders()
     glAttachShader (program, fs);
     glAttachShader (program, vs);
 
-    glBindAttribLocation(program, 2, "aVertexPos");
-    glBindAttribLocation(program, 3, "aColor");
-
+    glBindAttribLocation(program, SHADER_VERTEX_LOC_INDEX, "aVertex");
+    glBindAttribLocation(program, SHADER_COLOR_LOC_INDEX, "aColor");
 
     glLinkProgram (program);
 
     glUseProgram (program);
 }
 
-GLuint gvaoid = 0;
 static void defineVAO()
 {
-    GLuint voaIds[3];
-    glGenVertexArrays(3, voaIds);
+    vaoIds = new GLuint[2];
+    glGenVertexArrays(2, vaoIds);
 
-    GLuint vboIds[4];
+    vboIds = new GLuint[4];
     glGenBuffers(4, vboIds);
 
-    GLint vertexPosLoc = glGetAttribLocation(program, "aVertexPos");
-    GLint colorLoc = glGetAttribLocation(program, "aColor");
+    GLint shaderVertexLocIndex = glGetAttribLocation(program, "aVertex");
+    GLint shaderColorLocIndex = glGetAttribLocation(program, "aColor");
 
-    gvaoid = voaIds[0];
-
-    // axes
-    glBindVertexArray(voaIds[0]);   // current VAO
+    // axes data
+    glBindVertexArray(vaoIds[0]);   // set current (bind) VAO to define axes data
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
-    glVertexAttribPointer(2/*index*/, 3, GL_FLOAT, GL_FALSE, 0/*stride*/, 0/*pointer offset*/);
-    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(shaderVertexLocIndex, nVertexComponents/*3*/, GL_FLOAT, GL_FALSE, 0/*stride*/, 0/*pointer offset*/);
+    glEnableVertexAttribArray(shaderVertexLocIndex);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
-    glVertexAttribPointer(3/*index*/, 3, GL_FLOAT, GL_FALSE, 0/*stride*/, 0/*pointer offset*/);
-    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(shaderColorLocIndex, nColorComponents/*3*/, GL_FLOAT, GL_FALSE, 0/*stride*/, 0/*pointer offset*/);
+    glEnableVertexAttribArray(shaderColorLocIndex);
 
-    // pyramid
-    glBindVertexArray(voaIds[1]);
+    // pyramid data
+    glBindVertexArray(vaoIds[1]); // set current (bind) VAO to define vertex data
     
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(shaderVertexLocIndex, nVertexComponents/*3*/, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(shaderVertexLocIndex);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[3]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(shaderColorLocIndex, nColorComponents/*3*/, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(shaderColorLocIndex);
 
     glBindVertexArray(0); // disable VAO
 }
@@ -370,14 +401,13 @@ static void drawShaderWithVertexArrayObject()
     GLint ploc = glGetUniformLocation(program, "upMat");
     glUniformMatrix4fv(ploc, 1, false, pMat);
 
-    GLint vertexPosLoc = glGetAttribLocation(program, "aVertexPos");
-    GLint colorLoc = glGetAttribLocation(program, "aColor");
+    glBindVertexArray(vaoIds[0]);   // enable VAO defining the axes
+    glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
-    glBindVertexArray(1);   // current VAO, enable VAO
-    glDrawArrays( GL_LINES, 0, 6 );
+    glBindVertexArray(vaoIds[1]);   // enable VAO defining the pyramid
+    glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
 
-    glBindVertexArray(2);
-    glDrawArrays( GL_TRIANGLES, 0, 18 );
+    glBindVertexArray(0); // disable VAO
 }
 
 static void drawShader()
@@ -395,40 +425,39 @@ static void drawShader()
     GLint ploc = glGetUniformLocation(program, "upMat");
     glUniformMatrix4fv(ploc, 1, false, pMat);
 
-    GLint vertexPosLoc = glGetAttribLocation(program, "aVertexPos");
-    GLint colorLoc = glGetAttribLocation(program, "aColor");
+    GLint shaderVertexLocIndex = glGetAttribLocation(program, "aVertex");
+    GLint shaderColorLocIndex = glGetAttribLocation(program, "aColor");
 
-    GLuint* aVboIds = new GLuint[3];
-    glGenBuffers(3, aVboIds);
-
-    //glEnableClientState(GL_VERTEX_ARRAY);
+    vboIds = new GLuint[4];
+    glGenBuffers(4, vboIds);
 
     // Set axes data
-    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
-    glVertexAttribPointer(vertexPosLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(shaderVertexLocIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(shaderVertexLocIndex);
 
-    //glEnableClientState(GL_COLOR_ARRAY);
-    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
-    glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(shaderColorLocIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(shaderColorLocIndex);
 
-    glDrawArrays( GL_LINES, 0, 6 );
+    // Draw axes
+    glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
-    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
+    // Set pyramid data
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
-    glVertexAttribPointer(vertexPosLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(shaderVertexLocIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(shaderVertexLocIndex);
 
-    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[3]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
-    glVertexAttribPointer(colorLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(shaderColorLocIndex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(shaderColorLocIndex);
 
     // Draw pyramid
-    glDrawArrays( GL_TRIANGLES, 0, 18 );
+    glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
 }
 
 static void drawVertexBufferObject()
@@ -441,7 +470,7 @@ static void drawVertexBufferObject()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
 
-    //// Set axes data
+    // Set axes data
     glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
     glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
     glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -449,12 +478,11 @@ static void drawVertexBufferObject()
     glBindBuffer(GL_ARRAY_BUFFER, aVboIds[1]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
     glColorPointer(3, GL_FLOAT, 0, 0);
-    glDrawArrays( GL_LINES, 0, 6 );
+    glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
 
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
@@ -474,11 +502,13 @@ static void drawVertexBufferObject()
     glNormalPointer(GL_FLOAT, 0, 0);
 
     // Draw pyramid
-    glDrawArrays( GL_TRIANGLES, 0, 18 );
+    glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // Disable the VBO
 }
 
 static void drawVertexArray()
@@ -489,7 +519,7 @@ static void drawVertexArray()
 
     glVertexPointer(3, GL_FLOAT, 0, ave);
     glColorPointer(3, GL_FLOAT, 0, ace);
-    glDrawArrays( GL_LINES, 0, 6 );
+    glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -503,7 +533,7 @@ static void drawVertexArray()
     glColorPointer(3, GL_FLOAT, 0, pce);
     glNormalPointer(GL_FLOAT, 0, n);
 
-    glDrawArrays( GL_TRIANGLES, 0, 18 );
+    glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -537,48 +567,42 @@ static void drawImmediate()
 
     glBegin(GL_TRIANGLES);
         glColor3d(1, 1, 1);
-        glVertex3f(v[0], v[1], v[2]);   // 0
-        glVertex3f(v[3], v[4], v[5]);   // 1
-        glVertex3f(v[6], v[7], v[8]);   // 2
-        //setNormal(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]);
+        glVertex3f(v[0], v[1], v[2]);       // 0
+        glVertex3f(v[3], v[4], v[5]);       // 1
+        glVertex3f(v[6], v[7], v[8]);       // 2
         glNormal3f(n[3*0+0], n[3*0+1], n[3*0+2]);
 
-        glVertex3f(v[6], v[7], v[8]);   // 2
-        glVertex3f(v[9], v[10], v[11]); // 3
-        glVertex3f(v[0], v[1], v[2]);   // 0
-        glNormal3f(n[3*1+0], n[3*1+1], n[3*1+2]);
+        glVertex3f(v[6], v[7], v[8]);       // 2
+        glVertex3f(v[9], v[10], v[11]);     // 3
+        glVertex3f(v[0], v[1], v[2]);       // 0
 
         glColor3f(.5, .5, 0);
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[12], v[13], v[14]);    // 4
-        //setNormal(v[0], v[1], v[2], v[9], v[10], v[11],  v[12], v[13], v[14]);
         glNormal3f(n[3*2+0], n[3*2+1], n[3*2+2]);
 
         glColor3f(0, .5, .5);
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[12], v[13], v[14]);    // 4
-        //setNormal(v[9], v[10], v[11], v[6], v[7], v[8], v[12], v[13], v[14]);
         glNormal3f(n[3*3+0], n[3*3+1], n[3*3+2]);
 
         glColor3f(.5, 0, .5);
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[12], v[13], v[14]);    // 4
-        //setNormal(v[6], v[7], v[8], v[3], v[4], v[5], v[12], v[13], v[14]);
         glNormal3f(n[3*4+0], n[3*4+1], n[3*4+2]);
 
         glColor3f(.5, .5, .5);
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[12], v[13], v[14]);    // 4
-        //setNormal(v[3], v[4], v[5], v[0], v[1], v[2], v[12], v[13], v[14]);
         glNormal3f(n[3*5+0], n[3*5+1], n[3*5+2]);
     glEnd();
 }
 
-static void display(void)
+static void onDisplay(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen And Depth Buffer
 
@@ -595,11 +619,16 @@ static void display(void)
     glRotatef(thetay, 0, 1, 0);
     glRotatef(thetaz, 0, 0, 1);
 
-    //drawImmediate();
-    //drawVertexArray();
-    //drawVertexBufferObject();
-    //drawShader();
-    drawShaderWithVertexArrayObject();
+    if (drawType == kImmediate)
+        drawImmediate();
+    else if (drawType == kVertexArray)
+        drawVertexArray();
+    else if (drawType == kVBO)
+        drawVertexBufferObject();
+    else if (drawType == kShader)
+        drawShader();
+    else if (drawType == kVAO)
+        drawShaderWithVertexArrayObject();
 
     glutSwapBuffers();
 }
@@ -614,9 +643,9 @@ int main(int argc, char* argv[])
 
     glutCreateWindow("Basic OpenGL using FreeGLUT");
 
-    glutReshapeFunc(resize);
-    glutDisplayFunc(display);
-    glutKeyboardFunc(key);
+    glutReshapeFunc(onResize);
+    glutDisplayFunc(onDisplay);
+    glutKeyboardFunc(onKeyPressed);
 
     glClearColor(0,0,0,.5);
     glEnable(GL_CULL_FACE);
@@ -648,6 +677,8 @@ int main(int argc, char* argv[])
     expandVertices();
     expandColors();
     calculateNormals();
+
+    displayCommands();
 
     glutMainLoop();
 
