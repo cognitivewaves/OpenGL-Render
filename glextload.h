@@ -28,7 +28,7 @@ PFNGLBINDBUFFERPROC glBindBuffer = NULL;
 PFNGLBUFFERDATAPROC glBufferData = NULL;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers = NULL;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = NULL;
-PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexArrayAttrib = NULL;
+PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = NULL;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = NULL;
 PFNGLGENVERTEXARRAYSPROC glGenVertexArrays = NULL;
 
@@ -39,7 +39,7 @@ void LoadGLExtensions()
     glBufferData = (PFNGLBUFFERDATAPROC) wglGetProcAddress("glBufferData");
     glDeleteBuffers = (PFNGLDELETEBUFFERSPROC) wglGetProcAddress("glDeleteBuffers");
     glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) wglGetProcAddress("glEnableVertexAttribArray");
-    glDisableVertexArrayAttrib = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) wglGetProcAddress("glDisableVertexArrayAttrib");
+    glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) wglGetProcAddress("glDisableVertexArrayAttrib");
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) wglGetProcAddress("glVertexAttribPointer");
     glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC) wglGetProcAddress("glGenVertexArrays");
     glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC) wglGetProcAddress("glBindVertexArray");
