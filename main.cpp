@@ -124,7 +124,7 @@ void expandVertices()
     }
 }
 
-float c[] = { 0.3, 0.30, 0.3,
+float pc[] = { 0.3, 0.30, 0.3,
               1.0, 0.70, 0.0,
               1.0, 0.62, 0.0,
               1.0, 0.40, 0.0,
@@ -146,7 +146,7 @@ void expandColors()
         {
             for (int k=0; k<nColorComponents; k++)
             {
-                pce[(i*3+j)*3+k] = c[pci[i*3+j]*3+k];
+                pce[(i*3+j)*3+k] = pc[pci[i*3+j]*3+k];
             }
         }
     }
@@ -545,28 +545,28 @@ static void drawImmediate()
     calculateNormals();
 
     // x-axis in red
-    glColor3d(1, 0, 0);
+    glColor3d(ac[0], ac[1], ac[2]);
     glBegin(GL_LINES);
     glVertex3f(av[0], av[1], av[2]);
     glVertex3f(av[3], av[4], av[5]);
     glEnd();
 
     // y-axis in green
-    glColor3d(0, 1, 0);
+    glColor3d(ac[3], ac[4], ac[5]);
     glBegin(GL_LINES);
     glVertex3f(av[0], av[1], av[2]);
     glVertex3f(av[6], av[7], av[8]);
     glEnd();
 
     // z-axis in blue
-    glColor3d(0, 0, 1);
+    glColor3d(ac[6], ac[7], ac[8]);
     glBegin(GL_LINES);
     glVertex3f(av[0], av[1], av[2]);
     glVertex3f(av[9], av[10], av[11]);
     glEnd();
 
     glBegin(GL_TRIANGLES);
-        glColor3d(1, 1, 1);
+        glColor3d(pc[0], pc[1], pc[2]);
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[6], v[7], v[8]);       // 2
@@ -576,25 +576,25 @@ static void drawImmediate()
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[0], v[1], v[2]);       // 0
 
-        glColor3f(.5, .5, 0);
+        glColor3f(pc[3], pc[4], pc[5]);
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[12], v[13], v[14]);    // 4
         glNormal3f(n[3*2+0], n[3*2+1], n[3*2+2]);
 
-        glColor3f(0, .5, .5);
+        glColor3f(pc[6], pc[7], pc[8]);
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[12], v[13], v[14]);    // 4
         glNormal3f(n[3*3+0], n[3*3+1], n[3*3+2]);
 
-        glColor3f(.5, 0, .5);
+        glColor3f(pc[9], pc[10], pc[11]);
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[12], v[13], v[14]);    // 4
         glNormal3f(n[3*4+0], n[3*4+1], n[3*4+2]);
 
-        glColor3f(.5, .5, .5);
+        glColor3f(pc[12], pc[13], pc[14]);
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[12], v[13], v[14]);    // 4
