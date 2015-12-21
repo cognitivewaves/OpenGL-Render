@@ -248,64 +248,6 @@ static void onResize(int w, int h)
     glViewport(0, 0, width, height);
 }
 
-void calculateNormals()
-{
-    for (int i=0; i<6; i++)
-    {
-        float* v0=&v[pvi[i*3+0]*3];
-        float v0x=v0[0], v0y=v0[1], v0z=v0[2];
-
-        float* v1=&v[pvi[i*3+1]*3];
-        float v1x=v1[0], v1y=v1[1], v1z=v1[2];
-
-        float* v2=&v[pvi[i*3+2]*3];
-        float v2x=v2[0], v2y=v2[1], v2z=v2[2];
-
-        float ux = v1x - v0x;
-        float uy = v1y - v0y;
-        float uz = v1z - v0z;
-
-        float vx = v2x - v0x;
-        float vy = v2y - v0y;
-        float vz = v2z - v0z;
-
-        float nx = uy*vz - uz*vy;
-        float ny = uz*vx - ux*vz;
-        float nz = ux*vy - uy*vx;
-
-        n[i*3*3+0]=nx;
-        n[i*3*3+1]=ny;
-        n[i*3*3+2]=nz;
-
-        n[i*3*3+3]=nx;
-        n[i*3*3+4]=ny;
-        n[i*3*3+5]=nz;
-
-        n[i*3*3+6]=nx;
-        n[i*3*3+7]=ny;
-        n[i*3*3+8]=nz;
-    }
-}
-
-void setNormal(float v1x, float v1y, float v1z,
-               float v2x, float v2y, float v2z, 
-               float v3x, float v3y, float v3z)
-{
-    float ux = v2x - v1x;
-    float uy = v2y - v1y;
-    float uz = v2z - v1z;
-
-    float vx = v3x - v1x;
-    float vy = v3y - v1y;
-    float vz = v3z - v1z;
-
-    float nx = uy*vz - uz*vy;
-    float ny = uz*vx - ux*vz;
-    float nz = ux*vy - uy*vx;
-
-    glNormal3f(nx, ny, nz);
-}
-
 const char* vertex_shader =
     "attribute vec3 aVertex;"
     "attribute vec3 aColor;"
@@ -486,7 +428,6 @@ static void drawVertexBufferObject()
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
 
     // Set pyramid data
     glBindBuffer(GL_ARRAY_BUFFER, aVboIds[0]);  // vertex
@@ -497,16 +438,11 @@ static void drawVertexBufferObject()
     glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
     glColorPointer(3, GL_FLOAT, 0, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, aVboIds[2]);  // normal
-    glBufferData(GL_ARRAY_BUFFER, sizeof(n), n, GL_STATIC_DRAW);
-    glNormalPointer(GL_FLOAT, 0, 0);
-
     // Draw pyramid
     glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0); // Disable the VBO
 }
@@ -527,23 +463,18 @@ static void drawVertexArray()
     // Draw pyramid
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
 
     glVertexPointer(3, GL_FLOAT, 0, pve);
     glColorPointer(3, GL_FLOAT, 0, pce);
-    glNormalPointer(GL_FLOAT, 0, n);
 
     glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 static void drawImmediate()
 {
-    calculateNormals();
-
     // x-axis in red
     glColor3d(ac[0], ac[1], ac[2]);
     glBegin(GL_LINES);
@@ -570,7 +501,6 @@ static void drawImmediate()
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[6], v[7], v[8]);       // 2
-        glNormal3f(n[3*0+0], n[3*0+1], n[3*0+2]);
 
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[9], v[10], v[11]);     // 3
@@ -580,25 +510,21 @@ static void drawImmediate()
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[12], v[13], v[14]);    // 4
-        glNormal3f(n[3*2+0], n[3*2+1], n[3*2+2]);
 
         glColor3f(pc[6], pc[7], pc[8]);
         glVertex3f(v[9], v[10], v[11]);     // 3
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[12], v[13], v[14]);    // 4
-        glNormal3f(n[3*3+0], n[3*3+1], n[3*3+2]);
 
         glColor3f(pc[9], pc[10], pc[11]);
         glVertex3f(v[6], v[7], v[8]);       // 2
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[12], v[13], v[14]);    // 4
-        glNormal3f(n[3*4+0], n[3*4+1], n[3*4+2]);
 
         glColor3f(pc[12], pc[13], pc[14]);
         glVertex3f(v[3], v[4], v[5]);       // 1
         glVertex3f(v[0], v[1], v[2]);       // 0
         glVertex3f(v[12], v[13], v[14]);    // 4
-        glNormal3f(n[3*5+0], n[3*5+1], n[3*5+2]);
     glEnd();
 }
 
@@ -655,28 +581,10 @@ int main(int argc, char* argv[])
     //glDepthFunc(GL_LESS);
     glShadeModel(GL_SMOOTH);
 
-    const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
-    const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
-    const GLfloat light_specular[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-    const GLfloat light_position[] = { 1.0f, 1.0f, 1.0f, 0.0f };
-
-    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_NORMALIZE);
-
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-    glEnable(GL_COLOR_MATERIAL);
-
     expandAxesVertices();
     expandAxesColors();
     expandVertices();
     expandColors();
-    calculateNormals();
 
     displayCommands();
 
