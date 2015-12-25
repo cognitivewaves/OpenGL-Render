@@ -8,6 +8,7 @@
 static double zoom = .01;
 static int width = 0;
 static int height = 0;
+static float tx=0, ty=0;
 static float thetax=0, thetay=0, thetaz=0;
 
 enum DrawType
@@ -169,22 +170,31 @@ bool double_equal(double a, double b)
 // ---------------------------------------------------------------------------
 static void displayCommands()
 {
-    printf("1       : Immediate mode\n");
-    printf("2       : Vertex array\n");
-    printf("3       : Vertex Buffer Object (VBO)\n");
-    printf("4       : Shader\n");
-    printf("5       : Shader with Vertex Array Object (VAO)\n");
+    printf("----- Key commands -----\n");
     printf("\n");
-    printf("Q/q/ESC : Quit\n");
-    printf("+/=     : Zoom in\n");
-    printf("-/_     : Zoom out\n");
-    printf("SPACE   : Reset view\n");
-    printf("X       : Rotate +ve X axis\n");
-    printf("x       : Rotate -ve X axis\n");
-    printf("Y       : Rotate +ve Y axis\n");
-    printf("X       : Rotate +ve Y axis\n");
-    printf("Z       : Rotate +ve Z axis\n");
-    printf("z       : Rotate -ve z axis\n");
+    printf("1           : Immediate\n");
+    printf("2           : Vertex array\n");
+    printf("3           : Vertex Buffer Object (VBO)\n");
+    printf("4           : Shader with Vertex Buffer Object (VBO)\n");
+    printf("5           : Shader with Vertex Array Object (VBO and VAO)\n");
+    printf("\n");
+    printf("+/=         : Zoom in\n");
+    printf("-/_         : Zoom out\n");
+    printf("\n");
+    printf("Left arrow  : Pan left\n");
+    printf("Right arrow : Pan left\n");
+    printf("Up arrow    : Pan left\n");
+    printf("Down arrow  : Pan left\n");
+    printf("\n");
+    printf("X           : Rotate +ve X axis\n");
+    printf("x           : Rotate -ve X axis\n");
+    printf("Y           : Rotate +ve Y axis\n");
+    printf("X           : Rotate +ve Y axis\n");
+    printf("Z           : Rotate +ve Z axis\n");
+    printf("z           : Rotate -ve Z axis\n");
+    printf("\n");
+    printf("SPACE       : Reset view\n");
+    printf("Q/q/ESC     : Quit\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +221,7 @@ static void onKeyPressed(unsigned char key, int x, int y)
         break;
     case ' ':
         zoom = 0.01;
+        tx=0; ty=0;
         thetax=0; thetay=0; thetaz=0;
         break;
 
@@ -239,6 +250,24 @@ static void onKeyPressed(unsigned char key, int x, int y)
         drawType = kVAO; break;
     default:
         break;
+    }
+
+    glutPostRedisplay();
+}
+
+// ---------------------------------------------------------------------------
+static void onSpecialKeyPressed(int key, int x, int y)
+{
+    switch (key)
+    {
+    case GLUT_KEY_LEFT:     // left arrow
+        tx -=0.25; break;
+    case GLUT_KEY_RIGHT:    // right arrow
+        tx +=0.25; break;
+    case GLUT_KEY_UP:       // up arrow
+        ty +=0.25; break;
+    case GLUT_KEY_DOWN:     // down arrow
+        ty -=0.25; break;
     }
 
     glutPostRedisplay();
@@ -577,6 +606,8 @@ static void onDisplay(void)
     glRotatef(thetay, 0, 1, 0);
     glRotatef(thetaz, 0, 0, 1);
 
+    glTranslatef(tx, ty, 0);
+
     if (drawType == kImmediate)
         drawImmediate();
     else if (drawType == kVertexArray)
@@ -605,6 +636,7 @@ int main(int argc, char* argv[])
     glutReshapeFunc(onResize);
     glutDisplayFunc(onDisplay);
     glutKeyboardFunc(onKeyPressed);
+    glutSpecialFunc(onSpecialKeyPressed);
 
     glClearColor(0,0,0,.5);
     glEnable(GL_CULL_FACE);
