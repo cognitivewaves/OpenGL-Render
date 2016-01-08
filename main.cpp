@@ -16,18 +16,18 @@ enum DrawType
     kImmediate,
     kVertexArray,
     kVBO,
-    kShader,
-    kVAO
+    kShaderVBO,
+    kShaderVAO
 };
 DrawType drawType = kImmediate;
 
 GLuint* vboIds = NULL;
 GLuint* vaoIds = NULL;
 GLuint program = 0;
-GLuint SHADER_VERTEX_LOC_INDEX = 1;
-GLuint SHADER_COLOR_LOC_INDEX = 2;
+GLuint VERTEX_ATTR_COORDS = 1;
+GLuint VERTEX_ATTR_COLOR = 2;
 
-const int nVertexComponents = 3;
+const int nCoordsComponents = 3;
 const int nColorComponents = 3;
 const int nLines = 3;
 const int nVerticesPerLine = 2;
@@ -64,7 +64,7 @@ GLubyte aci[] = { 0, 0,
                   1, 1,
                   2, 2 };
 
-float ave[nLines*nVerticesPerLine*nVertexComponents];
+float ave[nLines*nVerticesPerLine*nCoordsComponents];
 void expandAxesVertices()
 {
     for (int i=0; i<6; i++)
@@ -113,14 +113,14 @@ GLubyte pvi[] = {0, 1, 2,
                  2, 1, 4,
                  1, 0, 4};
 
-float pve[nFaces*nVerticesPerFace*nVertexComponents];
+float pve[nFaces*nVerticesPerFace*nCoordsComponents];
 void expandPyramidVertices()
 {
     for (int i=0; i<nFaces; i++)
     {
         for (int j=0; j<nVerticesPerFace; j++)
         {
-            for (int k=0; k<nVertexComponents; k++)
+            for (int k=0; k<nCoordsComponents; k++)
             {
                 pve[(i*3+j)*3+k] = pv[pvi[i*3+j]*3+k];
             }
@@ -156,7 +156,7 @@ void expandPyramidColors()
     }
 }
 
-float n[nFaces*nVerticesPerFace*nVertexComponents];
+float n[nFaces*nVerticesPerFace*nCoordsComponents];
 
 // ===========================================================================
 
@@ -245,9 +245,9 @@ static void onKeyPressed(unsigned char key, int x, int y)
     case '3':
         drawType = kVBO; break;
     case '4':
-        drawType = kShader; break;
+        drawType = kShaderVBO; break;
     case '5':
-        drawType = kVAO; break;
+        drawType = kShaderVAO; break;
     default:
         break;
     }
@@ -283,13 +283,13 @@ static void onResize(int w, int h)
 
 // ---------------------------------------------------------------------------
 const char* vertex_shader =
-    "attribute vec3 aVertex;"
+    "attribute vec3 aCoords;"
     "attribute vec3 aColor;"
     "uniform mat4 umvMat;"
     "uniform mat4 upMat;"
     "varying vec3 vColor;"
     "void main () {"
-        "gl_Position = upMat * umvMat * vec4(aVertex, 1.0);"
+        "gl_Position = upMat * umvMat * vec4(aCoords, 1.0);"
         "vColor = aColor;"
     "}";
 
@@ -314,8 +314,8 @@ static void initShaders()
     glAttachShader (program, fs);
     glAttachShader (program, vs);
 
-    glBindAttribLocation(program, SHADER_VERTEX_LOC_INDEX, "aVertex");
-    glBindAttribLocation(program, SHADER_COLOR_LOC_INDEX, "aColor");
+    glBindAttribLocation(program, VERTEX_ATTR_COORDS, "aCoords");
+    glBindAttribLocation(program, VERTEX_ATTR_COLOR, "aColor");
 
     glLinkProgram (program);
 
@@ -331,34 +331,34 @@ static void defineVAO()
     vboIds = new GLuint[4];
     glGenBuffers(4, vboIds);
 
-    GLint shaderVertexLocIndex = glGetAttribLocation(program, "aVertex");
-    GLint shaderColorLocIndex = glGetAttribLocation(program, "aColor");
+    GLint vertexAttribCoords = glGetAttribLocation(program, "aCoords");
+    GLint vertexAttribColor = glGetAttribLocation(program, "aColor");
 
     // set current (bind) VAO to define axes data
     glBindVertexArray(vaoIds[0]);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // coordinates
     glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderVertexLocIndex, nVertexComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderVertexLocIndex);
+    glVertexAttribPointer(vertexAttribCoords, nCoordsComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribCoords);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderColorLocIndex, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderColorLocIndex);
+    glVertexAttribPointer(vertexAttribColor, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribColor);
 
-    // Set current (bind) VAO to define vertex data
+    // Set current (bind) VAO to define pyramid data
     glBindVertexArray(vaoIds[1]);
     
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // coordinates
     glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderVertexLocIndex, nVertexComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderVertexLocIndex);
+    glVertexAttribPointer(vertexAttribCoords, nCoordsComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribCoords);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[3]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderColorLocIndex, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderColorLocIndex);
+    glVertexAttribPointer(vertexAttribColor, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribColor);
 
     // Disable VAO
     glBindVertexArray(0);
@@ -381,7 +381,7 @@ static void drawShaderWithVertexArrayObject()
     glGetFloatv(GL_MODELVIEW_MATRIX, mvMat); 
     glUniformMatrix4fv(mvloc, 1, false, mvMat);
 
-    // Pass the project matrix to the shader
+    // Pass the projection matrix to the shader
     GLfloat pMat[16]; 
     glGetFloatv(GL_PROJECTION_MATRIX, pMat); 
     glUniformMatrix4fv(ploc, 1, false, pMat);
@@ -412,15 +412,15 @@ static void drawShaderWithVertexBufferObject()
     // Get the variables from the shader to which data will be passed
     GLint mvloc = glGetUniformLocation(program, "umvMat");
     GLint ploc = glGetUniformLocation(program, "upMat");
-    GLint shaderVertexLocIndex = glGetAttribLocation(program, "aVertex");
-    GLint shaderColorLocIndex = glGetAttribLocation(program, "aColor");
+    GLint vertexAttribCoords = glGetAttribLocation(program, "aCoords");
+    GLint vertexAttribColor = glGetAttribLocation(program, "aColor");
 
     // Pass the model-view matrix to the shader
     GLfloat mvMat[16]; 
     glGetFloatv(GL_MODELVIEW_MATRIX, mvMat); 
     glUniformMatrix4fv(mvloc, 1, false, mvMat);
 
-    // Pass the project matrix to the shader
+    // Pass the projection matrix to the shader
     GLfloat pMat[16]; 
     glGetFloatv(GL_PROJECTION_MATRIX, pMat); 
     glUniformMatrix4fv(ploc, 1, false, pMat);
@@ -429,29 +429,29 @@ static void drawShaderWithVertexBufferObject()
     glGenBuffers(4, vboIds);
 
     // Set axes data
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // coordinates
     glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderVertexLocIndex, nVertexComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderVertexLocIndex);
+    glVertexAttribPointer(vertexAttribCoords, nCoordsComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribCoords);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderColorLocIndex, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderColorLocIndex);
+    glVertexAttribPointer(vertexAttribColor, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribColor);
 
     // Draw axes
     glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
     // Set pyramid data
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // coordinates
     glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderVertexLocIndex, nVertexComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderVertexLocIndex);
+    glVertexAttribPointer(vertexAttribCoords, nCoordsComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribCoords);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[3]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
-    glVertexAttribPointer(shaderColorLocIndex, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(shaderColorLocIndex);
+    glVertexAttribPointer(vertexAttribColor, nColorComponents, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(vertexAttribColor);
 
     // Draw pyramid
     glDrawArrays(GL_TRIANGLES, 0, nFaces*nVerticesPerFace);
@@ -472,9 +472,9 @@ static void drawVertexBufferObject()
     glEnableClientState(GL_COLOR_ARRAY);
 
     // Set axes data
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[0]);  // coordinates
     glBufferData(GL_ARRAY_BUFFER, sizeof(ave), ave, GL_STATIC_DRAW);
-    glVertexPointer(nVertexComponents, GL_FLOAT, 0, 0);
+    glVertexPointer(nCoordsComponents, GL_FLOAT, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[1]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(ace), ace, GL_STATIC_DRAW);
@@ -484,9 +484,9 @@ static void drawVertexBufferObject()
     glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
     // Set pyramid data
-    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // vertex
+    glBindBuffer(GL_ARRAY_BUFFER, vboIds[2]);  // coordinates
     glBufferData(GL_ARRAY_BUFFER, sizeof(pve), pve, GL_STATIC_DRAW);
-    glVertexPointer(nVertexComponents, GL_FLOAT, 0, 0);
+    glVertexPointer(nCoordsComponents, GL_FLOAT, 0, 0);
 
     glBindBuffer(GL_ARRAY_BUFFER, vboIds[3]);  // color
     glBufferData(GL_ARRAY_BUFFER, sizeof(pce), pce, GL_STATIC_DRAW);
@@ -509,14 +509,14 @@ static void drawVertexArray()
     glEnableClientState(GL_COLOR_ARRAY);
 
     // Set axes data
-    glVertexPointer(nVertexComponents, GL_FLOAT, 0, ave);
+    glVertexPointer(nCoordsComponents, GL_FLOAT, 0, ave);
     glColorPointer(nColorComponents, GL_FLOAT, 0, ace);
 
     // Draw axes
     glDrawArrays(GL_LINES, 0, nLines*nVerticesPerLine);
 
     // Set pyramid data
-    glVertexPointer(nVertexComponents, GL_FLOAT, 0, pve);
+    glVertexPointer(nCoordsComponents, GL_FLOAT, 0, pve);
     glColorPointer(nColorComponents, GL_FLOAT, 0, pce);
 
     // Draw pyramid
@@ -614,9 +614,9 @@ static void onDisplay(void)
         drawVertexArray();
     else if (drawType == kVBO)
         drawVertexBufferObject();
-    else if (drawType == kShader)
+    else if (drawType == kShaderVBO)
         drawShaderWithVertexBufferObject();
-    else if (drawType == kVAO)
+    else if (drawType == kShaderVAO)
         drawShaderWithVertexArrayObject();
 
     glutSwapBuffers();
