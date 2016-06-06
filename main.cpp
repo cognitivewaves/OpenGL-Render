@@ -34,7 +34,7 @@ const int nVerticesPerLine = 2;
 const int nFaces = 6;
 const int nVerticesPerFace = 3;
 
-// ===========================================================================
+// =========== Axis Data ======================================================
 
 //      Y
 //      |           Z
@@ -86,7 +86,7 @@ void expandAxesColors()
     }
 }
 
-// ===========================================================================
+// =========== Pyramid Data =================================================
 
 //  (3,4,5)          (6,7,8)
 //     1----------------2
@@ -589,7 +589,7 @@ static void drawImmediate()
 }
 
 // ---------------------------------------------------------------------------
-static void onDisplay(void)
+static void onDraw(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear Screen And Depth Buffer
 
@@ -628,13 +628,13 @@ int main(int argc, char* argv[])
     glutInit(&argc, argv);
     glutInitWindowSize(450,450);
     glutInitWindowPosition(40,40);
-    
+
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
 
     glutCreateWindow("Basic OpenGL using FreeGLUT");
 
     glutReshapeFunc(onResize);
-    glutDisplayFunc(onDisplay);
+    glutDisplayFunc(onDraw);
     glutKeyboardFunc(onKeyPressed);
     glutSpecialFunc(onSpecialKeyPressed);
 
