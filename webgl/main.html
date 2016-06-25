@@ -43,11 +43,11 @@ var av = [ 0.0, 0.0, 0.0,    // origin
            2.0, 0.0, 0.0,    // x-axis
            0.0, 2.0, 0.0,    // y-axis
            0.0, 0.0, 2.0 ];  // z-axis
-			 
+
 var avi = [ 0, 1,
             0, 2,
             0, 3 ];
-			
+
 var ac = [ 1.0, 0.0, 0.0,    // red   x-axis
            0.0, 1.0, 0.0,    // green y-axis
            0.0, 0.0, 1.0 ];  // blue  z-axis
@@ -55,7 +55,7 @@ var ac = [ 1.0, 0.0, 0.0,    // red   x-axis
 var aci = [ 0, 0,
             1, 1,
             2, 2 ];
-			  
+
 var ave = new Float32Array(nLines*nVerticesPerLine*nCoordsComponents);
 function expandAxesVertices()
 {
@@ -76,7 +76,7 @@ function expandAxesColors()
         ace[i*3+1] = ac[aci[i]*3+1];
         ace[i*3+2] = ac[aci[i]*3+2];
     }
-}		  
+}
 
 // =========== Pyramid Data =================================================
 
@@ -162,128 +162,128 @@ function double_equal(a, b)
 
 function displayCommands()
 {
-	var cmds = 
-    "----- Key commands -----  <br>" 		+ 
-    "<br>" 									+ 
-    "+/=         : Zoom in  <br>" 			+ 
-    "-/_         : Zoom out  <br>" 			+ 
-    "<br>" 									+ 
-    "Left arrow  : Pan left  <br>" 			+ 
-    "Right arrow : Pan left  <br>" 			+ 
-    "Up arrow    : Pan left  <br>" 			+ 
-    "Down arrow  : Pan left  <br>" 			+ 
-    "<br>" 									+	 
-    "X           : Rotate +ve X axis  <br>" + 
-    "x           : Rotate -ve X axis  <br>" + 
-    "Y           : Rotate +ve Y axis  <br>" + 
-    "X           : Rotate +ve Y axis  <br>" + 
-    "Z           : Rotate +ve Z axis  <br>" + 
-    "z           : Rotate -ve Z axis  <br>" + 
-    "<br>"	 								+ 
+    var cmds = 
+    "----- Key commands -----  <br>"        +
+    "<br>"                                  +
+    "+/=         : Zoom in  <br>"           +
+    "-/_         : Zoom out  <br>"          +
+    "<br>"                                  +
+    "Left arrow  : Pan left  <br>"          +
+    "Right arrow : Pan left  <br>"          +
+    "Up arrow    : Pan left  <br>"          +
+    "Down arrow  : Pan left  <br>"          +
+    "<br>"                                  +
+    "X           : Rotate +ve X axis  <br>" +
+    "x           : Rotate -ve X axis  <br>" +
+    "Y           : Rotate +ve Y axis  <br>" +
+    "X           : Rotate +ve Y axis  <br>" +
+    "Z           : Rotate +ve Z axis  <br>" +
+    "z           : Rotate -ve Z axis  <br>" +
+    "<br>"                                  +
     "SPACE       : Reset view  <br>";
-	
-	var p = document.getElementById("displayCommandsId");
-	p.innerHTML = cmds;
+    
+    var p = document.getElementById("displayCommandsId");
+    p.innerHTML = cmds;
 }
 
 // ---------------------------------------------------------------------------
 function onKeyPressed()
 {
-	var keycode = event.keyCode;
-	
-	switch (String.fromCharCode(keycode))
-	{
-		case '=':
-		case '+':
-			zoom=zoom-0.001; 
-			if (double_equal(zoom, 0))
-			   zoom = 0.001;
-			break;
-		case '-':
-		case '_': 
-			zoom = zoom+0.001;
-			if (double_equal(zoom, 0))
-				zoom = 0.001;
-			break;
-		case ' ':
-			zoom = 0.01;
-			tx=0; ty=0;
-			thetax=0; thetay=0; thetaz=0;
-			break;
+    var keycode = event.keyCode;
+    
+    switch (String.fromCharCode(keycode))
+    {
+        case '=':
+        case '+':
+            zoom=zoom-0.001; 
+            if (double_equal(zoom, 0))
+               zoom = 0.001;
+            break;
+        case '-':
+        case '_': 
+            zoom = zoom+0.001;
+            if (double_equal(zoom, 0))
+                zoom = 0.001;
+            break;
+        case ' ':
+            zoom = 0.01;
+            tx=0; ty=0;
+            thetax=0; thetay=0; thetaz=0;
+            break;
 
-		case 'x':
-			thetax -= 5; break;
-		case 'X':
-			thetax += 5; break; 
-		case 'y':
-			thetay -= 5; break;
-		case 'Y':
-			thetay += 5; break;
-		case 'z':
-			thetaz -= 5; break;
-		case 'Z':
-			thetaz += 5; break;
-	}
-	
-	onDraw();
+        case 'x':
+            thetax -= 5; break;
+        case 'X':
+            thetax += 5; break; 
+        case 'y':
+            thetay -= 5; break;
+        case 'Y':
+            thetay += 5; break;
+        case 'z':
+            thetaz -= 5; break;
+        case 'Z':
+            thetaz += 5; break;
+    }
+    
+    onDraw();
 }
 
 // ---------------------------------------------------------------------------
 function onSpecialKeyPressed(event)
 {
-	var keycode = event.keyCode;
-	switch (keycode)
+    var keycode = event.keyCode;
+    switch (keycode)
     {
-		case 37:    // left arrow
-			tx -=0.25; break;
-		case 39:    // right arrow
-			tx +=0.25; break;
-		case 38:    // up arrow
-			ty +=0.25; break;
-		case 40:    // down arrow
-			ty -=0.25; break;
+        case 37:    // left arrow
+            tx -=0.25; break;
+        case 39:    // right arrow
+            tx +=0.25; break;
+        case 38:    // up arrow
+            ty +=0.25; break;
+        case 40:    // down arrow
+            ty -=0.25; break;
     }
-	
-	onDraw();
+    
+    onDraw();
 }
 
 // ---------------------------------------------------------------------------
 var vertex_shader =
-    "attribute vec3 aCoords;" 								  +
-	"attribute vec3 aColor;"								  +
+    "attribute vec3 aCoords;"                                 +
+    "attribute vec3 aColor;"                                  +
     "uniform mat4 umvMat;"                                    +
     "uniform mat4 upMat;"                                     +
-	"varying vec3 vColor;"									  +
+    "varying vec3 vColor;"                                    +
     "void main(void) {"                                       +
-		"gl_Position = upMat * umvMat * vec4(aCoords, 1.0);"  +
-		"vColor = aColor;"									  +
+        "gl_Position = upMat * umvMat * vec4(aCoords, 1.0);"  +
+        "vColor = aColor;"                                    +
     "}"
 
 var fragment_shader =
-	"precision mediump float;" 			     +
-	"varying vec3 vColor;"					 +
+    "precision mediump float;"               +
+    "varying vec3 vColor;"                   +
     "void main(void) {"                      +
         "gl_FragColor = vec4(vColor, 1.0);"  +
     "}"
-	
+
 // ---------------------------------------------------------------------------
 function initShaders() 
 {
     var vs = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vs, vertex_shader);
     gl.compileShader(vs);
-	
-	var compiled = gl.getShaderParameter(vs, gl.COMPILE_STATUS);
-	console.log('vs status: ' + compiled);
+    
+    var compiled = gl.getShaderParameter(vs, gl.COMPILE_STATUS);
+    console.log('vs status: ' + compiled);
 
     var fs = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fs, fragment_shader);
     gl.compileShader(fs);
     
-	var compiled = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
-	console.log('fs status: ' + compiled);
-	var compilationLog = gl.getShaderInfoLog(fs);
-	console.log('Shader compiler log: ' + compilationLog);
+    var compiled = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
+    console.log('fs status: ' + compiled);
+    var compilationLog = gl.getShaderInfoLog(fs);
+    console.log('Shader compiler log: ' + compilationLog);
 
     shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, vs);
@@ -296,49 +296,49 @@ function initShaders()
 // ---------------------------------------------------------------------------
 function drawShaderWithVertexBufferObject() 
 {
-	// Get the variables from the shader to which data will be passed
-	var umvMatLoc = gl.getUniformLocation(shaderProgram, "umvMat");
+    // Get the variables from the shader to which data will be passed
+    var umvMatLoc = gl.getUniformLocation(shaderProgram, "umvMat");
     var upMatLoc = gl.getUniformLocation(shaderProgram, "upMat");
-	var vertexAttribCoords = gl.getAttribLocation(shaderProgram, "aCoords");
+    var vertexAttribCoords = gl.getAttribLocation(shaderProgram, "aCoords");
     var vertexAttribColor = gl.getAttribLocation(shaderProgram, "aColor");
-	
-	// Pass the model-view matrix to the shader
+    
+    // Pass the model-view matrix to the shader
     gl.uniformMatrix4fv(umvMatLoc, false, mvMatrix);
-	
-	// Pass the projection matrix to the shader
+    
+    // Pass the projection matrix to the shader
     gl.uniformMatrix4fv(upMatLoc, false, pMatrix);
-	
-	// Set axes data
+    
+    // Set axes data
     var axesBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, axesBuffer);	// coordinates
+    gl.bindBuffer(gl.ARRAY_BUFFER, axesBuffer);    // coordinates
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ave), gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexAttribCoords, nCoordsComponents, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vertexAttribCoords);
-	
-	var axesColorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, axesColorBuffer); // color
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ace), gl.STATIC_DRAW);
-	gl.vertexAttribPointer(vertexAttribColor, nColorComponents, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(vertexAttribColor);
-	
-	// Draw axes
-	gl.drawArrays(gl.LINES, 0, nLines*nVerticesPerLine);
-	
-	// Set pyramid data
+    
+    var axesColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, axesColorBuffer); // color
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ace), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttribColor, nColorComponents, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexAttribColor);
+    
+    // Draw axes
+    gl.drawArrays(gl.LINES, 0, nLines*nVerticesPerLine);
+    
+    // Set pyramid data
     var pyramidBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pyramidBuffer);	// coordinates
+    gl.bindBuffer(gl.ARRAY_BUFFER, pyramidBuffer);    // coordinates
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pve), gl.STATIC_DRAW);
     gl.vertexAttribPointer(vertexAttribCoords, nCoordsComponents, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vertexAttribCoords);
-	
-	var pyramidColorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, pyramidColorBuffer); // color
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pce), gl.STATIC_DRAW);
-	gl.vertexAttribPointer(vertexAttribColor, nColorComponents, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(vertexAttribColor);
+    
+    var pyramidColorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, pyramidColorBuffer); // color
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pce), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vertexAttribColor, nColorComponents, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexAttribColor);
 
     // Draw pyramid
-    gl.drawArrays(gl.TRIANGLES, 0, nFaces*nVerticesPerFace);	
+    gl.drawArrays(gl.TRIANGLES, 0, nFaces*nVerticesPerFace);    
 }
 
 // ---------------------------------------------------------------------------
@@ -346,32 +346,32 @@ function onDraw()
 {
     var width = canvas.clientWidth;
     var height = canvas.clientHeight;
-	gl.viewport(0, 0, width, height);
+    gl.viewport(0, 0, width, height);
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	
-	// ModelView matrix
-	mvMatrix = mat4.create();
+    
+    // ModelView matrix
+    mvMatrix = mat4.create();
     mat4.identity(mvMatrix);
-	mat4.rotate(mvMatrix, thetax, [1, 0, 0]);
-	mat4.rotate(mvMatrix, thetay, [0, 1, 0]);
-	mat4.rotate(mvMatrix, thetaz, [0, 0, 1]);	
-	mat4.translate(mvMatrix, [tx, ty, 0]);
-	
-	// Ortho projection matrix
-	pMatrix = mat4.create();
-	mat4.identity(pMatrix);
-	mat4.ortho((-width/2)*zoom, (width/2)*zoom, (-height/2)*zoom, (height/2)*zoom, -10, 10, pMatrix);
-	
-	drawShaderWithVertexBufferObject();
+    mat4.rotate(mvMatrix, thetax, [1, 0, 0]);
+    mat4.rotate(mvMatrix, thetay, [0, 1, 0]);
+    mat4.rotate(mvMatrix, thetaz, [0, 0, 1]);
+    mat4.translate(mvMatrix, [tx, ty, 0]);
+    
+    // Ortho projection matrix
+    pMatrix = mat4.create();
+    mat4.identity(pMatrix);
+    mat4.ortho((-width/2)*zoom, (width/2)*zoom, (-height/2)*zoom, (height/2)*zoom, -10, 10, pMatrix);
+    
+    drawShaderWithVertexBufferObject();
 }
 
-// ---------------------------------------------------------------------------	
+// ---------------------------------------------------------------------------
 function webglInit() 
 {
-	canvas = document.getElementById("canvasId");
+    canvas = document.getElementById("canvasId");
     try {
         gl = canvas.getContext("experimental-webgl");
     }
@@ -386,19 +386,19 @@ function webglInit()
 function main() 
 {
     webglInit();
-	
-	document.addEventListener('keypress', onKeyPressed);
-	document.addEventListener('keydown', onSpecialKeyPressed, true);
+    
+    document.addEventListener('keypress', onKeyPressed);
+    document.addEventListener('keydown', onSpecialKeyPressed, true);
 
-	expandAxesVertices();
-	expandAxesColors();
-	expandPyramidVertices();
-	expandPyramidColors();
+    expandAxesVertices();
+    expandAxesColors();
+    expandPyramidVertices();
+    expandPyramidColors();
 
-	displayCommands();
-	
-	initShaders();    
-	onDraw();
+    displayCommands();
+    
+    initShaders();    
+    onDraw();
 }
 
 </script>
@@ -407,10 +407,10 @@ function main()
 
 
 <body onload="main();">
-	<canvas id="canvasId" style="border: none;" width="640" height="480"></canvas>
-	<br/>
-	
-	<p id="displayCommandsId"></p> 
+    <canvas id="canvasId" style="border: none;" width="640" height="480"></canvas>
+    <br/>
+    
+    <p id="displayCommandsId"></p> 
 </body>
 
 </html>
